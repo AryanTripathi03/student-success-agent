@@ -2,11 +2,14 @@
 import os
 import requests
 from dotenv import load_dotenv
+import os
 
-load_dotenv()
+# Remove or comment out load_dotenv()
+# load_dotenv()
 HF_API_KEY = os.getenv("HF_API_KEY")
 if not HF_API_KEY:
     raise ValueError("HF_API_KEY not found in .env")
+
 
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct"
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
