@@ -1,9 +1,10 @@
 __pycache__/
 *.pyc
+
+# Environment & secrets
 .env
-.venv/
-venv/
-data/*.csv
 .streamlit/secrets.toml
 keys/
-*.json
+
+# Generated / local data
+data/*.csv
