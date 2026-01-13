@@ -4,25 +4,18 @@ pandas==2.3.3
 numpy==1.26.4
 scikit-learn==1.2.2
 
-# Hugging Face / Generative AI
+# Hugging Face / AI
 transformers==4.57.3
-torch==2.5.1      # CPU-only, not +cu121
-torchvision==0.16.1  # optional if you use any vision features
+torch==2.5.1
 
-# PDF & Document Processing
+# PDF / Doc Processing
 pdfminer.six==20251107
 pdfplumber==0.11.8
 PyPDF2==3.0.1
 python-docx==1.2.0
 pillow==12.0.0
 
-# Networking / API
+# Networking / Env
 requests==2.32.5
 httpx==0.28.1
 python-dotenv==1.0.1
-
-# Utilities / Logging
-rich==14.2.0
-markdown-it-py==4.0.0
-mdurl==0.1.2
-pygments==2.19.2
