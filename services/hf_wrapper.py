@@ -1,19 +1,15 @@
 import os
+import streamlit as st
 
-# Try to get the API key from environment variables or Streamlit secrets
-HF_API_KEY = os.environ.get("HF_API_KEY")
+# Try to get HF_API_KEY from environment variables (set via Streamlit Secrets)
+HF_API_KEY = os.getenv("HF_API_KEY")
+
+# If not found there, try accessing via st.secrets
+if not HF_API_KEY:
+    HF_API_KEY = st.secrets.get("HF_API_KEY")
 
 if not HF_API_KEY:
-    # Try using st.secrets if available
-    try:
-        import streamlit as st
-        HF_API_KEY = st.secrets.get("HF_API_KEY")
-    except Exception:
-        pass
-
-if not HF_API_KEY:
-    # If still not found, give a clear error (will only be used locally)
-    raise ValueError("HF_API_KEY not set. Configure it via Streamlit Secrets or local .env")
+    raise ValueError("HF_API_KEY not set. Please configure it in Streamlit Secrets.")
 
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct"
 HEADERS = {"Authorization": f"Bearer {HF_API_KEY}"}
