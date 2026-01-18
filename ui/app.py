@@ -20,7 +20,7 @@ from agents.risk_agent import AcademicRiskAgent
 from agents.study_plan_agent import StudyPlanAgent
 from agents.advanced_mentorship_insight_agent import AdvancedMentorshipAgent
 
-from services.hf_wrapper import HFGenerator
+from services.ollama_wrapper import OllamaGenerator
 
 # -------------------------
 # App Config
@@ -96,7 +96,30 @@ weak_agent = WeakSubjectAgent()
 risk_agent = AcademicRiskAgent()
 study_agent = StudyPlanAgent()
 mentorship_agent = AdvancedMentorshipAgent()
-hf_gen = HFGenerator()
+ollama_gen = OllamaGenerator()
+# -------------------------
+# Cache function for roadmap per student
+# -------------------------
+@st.cache_data(show_spinner=False)
+def generate_roadmap(student_id, student_weak, student_plan, student_risk):
+    roadmap_prompt = f"""
+You are an expert academic mentor.
+
+Create a concise, actionable roadmap for the student to achieve their priority score. 
+Use the following data:
+
+- Weak subjects: {student_weak.to_dict(orient='records')}
+- Personalized study plan: {student_plan.to_dict(orient='records')}
+- Current academic risk: {student_risk.to_dict(orient='records')}
+
+Output the roadmap as:
+1. Step-by-step actions
+2. Weekly goals
+3. Motivation tips
+4. Focus areas for weak subjects
+Keep it under 300 words and actionable.
+"""
+    return ollama_gen.enhance(roadmap_prompt)
 
 # -------------------------
 # Run Agents
@@ -173,18 +196,72 @@ logic_insights = mentorship_agent.generate_mentorship(
 st.text_area(
     "Data-Driven Guidance",
     logic_insights,
-    height=280
+    height=320
 )
 
 
 
-st.subheader("🧠 AI Mentor (Generative Layer)")
+# -------------------------
+# Initialize session state caches if not present
+# -------------------------
+if 'ai_outputs' not in st.session_state:
+    st.session_state['ai_outputs'] = {}  # stores AI mentor outputs per student_id
+if 'roadmaps' not in st.session_state:
+    st.session_state['roadmaps'] = {}   # stores roadmap outputs per student_id
 
-try:
-    with st.spinner("Generating AI mentorship guidance..."):
-        enhanced = hf_gen.enhance(logic_insights)
+# -------------------------
+# Side-by-side AI Sections
+# -------------------------
+st.subheader("🧠 AI Mentor & 🗺️ Roadmap")
+col1, col2 = st.columns(2)
 
-    st.text_area("AI Mentor Output", enhanced, height=300)
+## -------------------------
+# Left column: AI Mentor
+# -------------------------
+with col1:
+    if st.button("Generate AI Mentorship Guidance", key=f"ai_mentor_{student_id}"):
+        with st.spinner("Generating AI mentorship guidance..."):
+            raw_ai = ollama_gen.enhance(
+                f"""
+You are an expert academic mentor.
 
-except Exception as e:
-    st.warning(f"Generative AI unavailable: {e}")
+Rewrite the mentorship advice below in:
+- clear bullet points
+- maximum 400 words
+- actionable steps
+- motivational but concise tone
+
+Mentorship Data:
+{logic_insights}
+"""
+            )
+
+            # Format spacing cleanly
+            st.session_state['ai_outputs'][student_id] = "\n\n".join(
+                line.strip() for line in raw_ai.splitlines() if line.strip()
+            )
+
+    # Show AI text only if generated
+    ai_text = st.session_state['ai_outputs'].get(student_id, "")
+    if ai_text:  # only display if there is content
+        st.text_area("🧠 AI Mentor Output", ai_text, height=520)
+
+# -------------------------
+# Right column: Roadmap
+# -------------------------
+with col2:
+    if st.button("Generate Roadmap", key=f"roadmap_{student_id}"):
+        with st.spinner("Creating personalized roadmap..."):
+            raw_roadmap = generate_roadmap(
+                student_id, student_weak, student_plan, student_risk
+            )
+
+            # Format spacing cleanly
+            st.session_state['roadmaps'][student_id] = "\n\n".join(
+                line.strip() for line in raw_roadmap.splitlines() if line.strip()
+            )
+
+    # Show roadmap only if generated
+    roadmap_text = st.session_state['roadmaps'].get(student_id, "")
+    if roadmap_text:  # only display if there is content
+        st.text_area("🗺️ Personalized Roadmap", roadmap_text, height=520)
